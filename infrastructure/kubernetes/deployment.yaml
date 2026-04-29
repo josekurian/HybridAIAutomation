@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hybrid-ai-api
+  labels:
+    app: hybrid-ai-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hybrid-ai-api
+  template:
+    metadata:
+      labels:
+        app: hybrid-ai-api
+    spec:
+      containers:
+        - name: api
+          image: hybrid-ai-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: "kubernetes"
+            - name: API_PREFIX
+              value: "/api/v1"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hybrid-ai-api
+spec:
+  selector:
+    app: hybrid-ai-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hybrid-ai-web
+  labels:
+    app: hybrid-ai-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hybrid-ai-web
+  template:
+    metadata:
+      labels:
+        app: hybrid-ai-web
+    spec:
+      containers:
+        - name: web
+          image: hybrid-ai-web:latest
+          ports:
+            - containerPort: 4173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hybrid-ai-web
+spec:
+  selector:
+    app: hybrid-ai-web
+  ports:
+    - port: 4173
+      targetPort: 4173

@@ -1,0 +1,19 @@
+name: invoice_processing
+version: 1
+description: Standard accounts payable invoice workflow.
+
+steps:
+  - id: ingest
+    action: receive_document
+  - id: extract
+    action: run_agent
+    agent: invoice
+  - id: validate
+    action: validate_required_fields
+  - id: route
+    action: route_to_queue
+    target: finance.ap_standard
+  - id: approve_high_value
+    action: conditional_escalation
+    when: amount_due >= 10000
+    target: finance.ap_high_value

@@ -1,0 +1,19 @@
+name: prior_authorization
+version: 1
+description: Healthcare prior authorization intake workflow.
+
+steps:
+  - id: intake
+    action: receive_request
+  - id: extract
+    action: run_agent
+    agent: prior_authorization
+  - id: eligibility
+    action: verify_member_eligibility
+  - id: medical_review
+    action: conditional_escalation
+    when: high_acuity_service == true
+    target: healthcare.medical_review
+  - id: utilization_review
+    action: route_to_queue
+    target: healthcare.utilization_review
