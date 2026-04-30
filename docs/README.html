@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="markdown-export.css" />
+</head>
+<body>
+<h1 id="documentation-index">Documentation Index</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-30</code></p>
+<p>This directory documents the current starter implementation in two
+layers:</p>
+<ul>
+<li>Project phases: how the platform is assembled, how requests move
+through the runtime, and how the local deployment is validated.</li>
+<li>Workflow phases: how each business flow is broken into explicit
+steps, routing decisions, and escalation points.</li>
+</ul>
+<h2 id="recommended-reading-order">Recommended reading order</h2>
+<ol type="1">
+<li><a href="./architecture.md">Architecture Overview</a></li>
+<li><a href="./repository-structure.md">Repository Structure
+Guide</a></li>
+<li><a href="./phases/phase-1-foundation-and-bootstrap.md">Phase 1:
+Foundation and Bootstrap</a></li>
+<li><a href="./phases/phase-2-request-intake-and-routing.md">Phase 2:
+Request Intake and Routing</a></li>
+<li><a href="./phases/phase-3-retrieval-and-domain-analysis.md">Phase 3:
+Retrieval and Domain Analysis</a></li>
+<li><a href="./phases/phase-4-ai-enrichment-and-fallback.md">Phase 4: AI
+Enrichment and Fallback</a></li>
+<li><a href="./phases/phase-5-frontend-operator-console.md">Phase 5:
+Frontend Operator Console</a></li>
+<li><a
+href="./phases/phase-6-deployment-validation-and-extension.md">Phase 6:
+Deployment, Validation, and Extension</a></li>
+<li><a href="./workflows/invoice-processing.md">Invoice Workflow
+Guide</a></li>
+<li><a href="./workflows/prior-authorization.md">Prior Authorization
+Workflow Guide</a></li>
+<li><a href="./customer-poc-playbook.md">Customer POC Playbook</a></li>
+</ol>
+<h2 id="documentation-map">Documentation map</h2>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>architecture.md</code></td>
+<td>High-level component map, runtime path, and deployment view</td>
+</tr>
+<tr>
+<td><code>repository-structure.md</code></td>
+<td>Detailed directory-by-directory guide for backend, frontend,
+infrastructure, and CI</td>
+</tr>
+<tr>
+<td><code>phases/</code></td>
+<td>Project lifecycle and request-processing phases</td>
+</tr>
+<tr>
+<td><code>workflows/</code></td>
+<td>Step-by-step business workflow execution notes</td>
+</tr>
+<tr>
+<td><code>customer-poc-playbook.md</code></td>
+<td>Delivery, demo, and expansion guidance for new customer pilots</td>
+</tr>
+</tbody>
+</table>
+<h2 id="revision-040-additions">Revision 0.4.0 additions</h2>
+<p>This documentation revision adds four kinds of detail:</p>
+<ul>
+<li>versioned document control across the existing project docs</li>
+<li>reuse guidance based on the existing
+<code>/Users/josekurian/AIAgents</code> portfolio</li>
+<li>explicit mapping to MCP servers, Oracle Fusion AI agents, and Oracle
+AI Agent Studio workflow assets already developed in other local
+projects</li>
+<li>dated OpenAI and Oracle platform update guidance current as of
+<code>2026-04-29</code></li>
+</ul>
+<h2 id="key-findings-from-the-local-portfolio-review">Key findings from
+the local portfolio review</h2>
+<p>The strongest reuse opportunities came from:</p>
+<ul>
+<li><code>AIAgents/AIAgentProjects/MCPPlatform</code></li>
+<li><code>AIAgents/MCPEngine</code></li>
+<li><code>AIAgents/EnterpriseAgents</code></li>
+<li><code>AIAgents/OracleFinancialsFrontierFullImplementation</code></li>
+<li><code>AIAgents/AIAgentProjects/EnterpriseAgents/oracle_health</code></li>
+</ul>
+<p>Important inventory signals:</p>
+<ul>
+<li><code>AIAgents/docs/AI_AGENTS_AND_WORKFLOWS_PROJECT_INVENTORY_2026-04-10.md</code>
+reports <code>1156</code> agent entries and <code>279</code> workflow
+entries across the local portfolio.</li>
+<li><code>AIAgents/docs/AI_AGENT_TEAMS_PROJECT_INVENTORY_AND_RECOMMENDATIONS_2026-04-28.md</code>
+identifies <code>18</code> explicit runtime teams and <code>20</code>
+workflow-defined team compositions already available for reuse or
+adaptation.</li>
+</ul>
+<h2 id="recommended-reading-for-the-new-material">Recommended reading
+for the new material</h2>
+<ol type="1">
+<li><a href="./architecture.md">Architecture Overview</a></li>
+<li><a href="./customer-poc-playbook.md">Customer POC Playbook</a></li>
+<li>the six phase guides in order</li>
+<li>the workflow guides for invoice and prior authorization</li>
+</ol>
+<h2 id="scope-note">Scope note</h2>
+<p>These documents describe the repository as it exists today:</p>
+<ul>
+<li>FastAPI backend</li>
+<li>React/Vite frontend</li>
+<li>Deterministic local extraction</li>
+<li>Optional OpenAI and OCI summary layers</li>
+<li>Docker Compose, OCI Terraform, and Kubernetes starter assets</li>
+</ul>
+<p>They also call out where the implementation is intentionally a
+starter and where production hardening still needs to be added.</p>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>repository-structure</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="markdown-export.css" />
+</head>
+<body>
+<h1 id="repository-structure-guide">Repository Structure Guide</h1>
+<p>Version: <code>0.4.1</code> Last updated: <code>2026-04-30</code></p>
+<p>This document explains the current <code>HybridAIAutomation</code>
+repository layout and what each major directory is responsible for.</p>
+<h2 id="top-level-layout">Top-level layout</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>backend/</code></td>
+<td>FastAPI service, domain agents, orchestration, auth, audit,
+workflows</td>
+</tr>
+<tr>
+<td><code>frontend/</code></td>
+<td>React and Vite operator console</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>architecture, delivery, workflow, and phase-level implementation
+guides</td>
+</tr>
+<tr>
+<td><code>infrastructure/</code></td>
+<td>OCI Terraform starter and Kubernetes starter manifests</td>
+</tr>
+<tr>
+<td><code>scripts/</code></td>
+<td>setup, example requests, and markdown export helpers</td>
+</tr>
+<tr>
+<td><code>tests/</code></td>
+<td>backend API smoke and integration-style tests</td>
+</tr>
+<tr>
+<td><code>workflows/</code></td>
+<td>business workflow definitions for invoice and prior
+authorization</td>
+</tr>
+<tr>
+<td><code>data/</code></td>
+<td>local runtime data such as audit events and credential storage</td>
+</tr>
+</tbody>
+</table>
+<h2 id="backend-structure">Backend structure</h2>
+<p>The backend is organized by responsibility rather than by framework
+layer only.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>backend/app/main.py</code></td>
+<td>FastAPI app bootstrap, router registration, CORS, health
+endpoints</td>
+</tr>
+<tr>
+<td><code>backend/app/api/routes/</code></td>
+<td>HTTP route surface for agents, workflows, auth, audit, protocols,
+and studio APIs</td>
+</tr>
+<tr>
+<td><code>backend/app/agents/</code></td>
+<td>business-specific agent logic for invoice and prior authorization
+flows</td>
+</tr>
+<tr>
+<td><code>backend/app/orchestration/</code></td>
+<td>request routing and multi-agent team orchestration</td>
+</tr>
+<tr>
+<td><code>backend/app/workflows/</code></td>
+<td>workflow registry and execution service</td>
+</tr>
+<tr>
+<td><code>backend/app/core/</code></td>
+<td>configuration, schemas, and security helpers</td>
+</tr>
+<tr>
+<td><code>backend/app/audit/</code></td>
+<td>audit event persistence and retrieval</td>
+</tr>
+<tr>
+<td><code>backend/app/integrations/</code></td>
+<td>mocked Oracle ERP and Oracle Health handoff adapters</td>
+</tr>
+<tr>
+<td><code>backend/app/ai/</code></td>
+<td>optional OpenAI and OCI AI client wrappers</td>
+</tr>
+<tr>
+<td><code>backend/app/protocols/</code></td>
+<td>MCP and A2A protocol metadata and runtime helpers</td>
+</tr>
+<tr>
+<td><code>backend/app/studio/</code></td>
+<td>blueprint composition, credential registry, monitoring, and
+marketplace logic</td>
+</tr>
+<tr>
+<td><code>backend/app/rag/</code></td>
+<td>deterministic retrieval helpers for domain context</td>
+</tr>
+</tbody>
+</table>
+<h2 id="frontend-structure">Frontend structure</h2>
+<p>The frontend is intentionally small and starter-oriented.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>frontend/src/App.tsx</code></td>
+<td>main operator console and studio surface</td>
+</tr>
+<tr>
+<td><code>frontend/src/styles.css</code></td>
+<td>page styling and layout</td>
+</tr>
+<tr>
+<td><code>frontend/src/main.tsx</code></td>
+<td>React bootstrap</td>
+</tr>
+<tr>
+<td><code>frontend/package.json</code></td>
+<td>frontend scripts and dependency contract</td>
+</tr>
+<tr>
+<td><code>frontend/Dockerfile</code></td>
+<td>reproducible frontend container build</td>
+</tr>
+</tbody>
+</table>
+<h2 id="infrastructure-structure">Infrastructure structure</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>local stack with frontend, backend, and pgvector database</td>
+</tr>
+<tr>
+<td><code>backend/Dockerfile</code></td>
+<td>backend image build</td>
+</tr>
+<tr>
+<td><code>frontend/Dockerfile</code></td>
+<td>frontend image build</td>
+</tr>
+<tr>
+<td><code>infrastructure/terraform/oci/main.tf</code></td>
+<td>OCI starter infrastructure contract</td>
+</tr>
+<tr>
+<td><code>infrastructure/kubernetes/deployment.yaml</code></td>
+<td>Kubernetes and OKE deployment starter</td>
+</tr>
+</tbody>
+</table>
+<h2 id="documentation-structure">Documentation structure</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/README.md</code></td>
+<td>documentation index</td>
+</tr>
+<tr>
+<td><code>docs/architecture.md</code></td>
+<td>architecture overview and runtime path</td>
+</tr>
+<tr>
+<td><code>docs/phases/</code></td>
+<td>phase-by-phase implementation and deployment notes</td>
+</tr>
+<tr>
+<td><code>docs/workflows/</code></td>
+<td>business workflow walkthroughs</td>
+</tr>
+<tr>
+<td><code>docs/customer-poc-playbook.md</code></td>
+<td>customer pilot and expansion guidance</td>
+</tr>
+<tr>
+<td><code>docs/repository-structure.md</code></td>
+<td>this repository structure guide</td>
+</tr>
+</tbody>
+</table>
+<h2 id="development-and-verification-structure">Development and
+verification structure</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Makefile</code></td>
+<td>local developer commands for test, build, docker, and doc
+export</td>
+</tr>
+<tr>
+<td><code>scripts/verify_local.sh</code></td>
+<td>shell-based verification path for test, frontend build, and Docker
+config</td>
+</tr>
+<tr>
+<td><code>tests/test_api.py</code></td>
+<td>API smoke tests for auth, workflow, audit, studio, and protocol
+routes</td>
+</tr>
+<tr>
+<td><code>tests/conftest.py</code></td>
+<td>test import bootstrap for stable local and CI execution</td>
+</tr>
+<tr>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>GitHub Actions pipeline for backend tests, frontend build, and
+Docker validation</td>
+</tr>
+<tr>
+<td><code>.dockerignore</code></td>
+<td>root Docker build-context hygiene</td>
+</tr>
+<tr>
+<td><code>frontend/.dockerignore</code></td>
+<td>frontend build-context hygiene</td>
+</tr>
+</tbody>
+</table>
+<h2 id="expected-local-workflow">Expected local workflow</h2>
+<ol type="1">
+<li>Run <code>make test</code> for backend API verification.</li>
+<li>Run <code>make frontend-build</code> for frontend verification.</li>
+<li>Run <code>make compose-config</code> to validate the container stack
+contract.</li>
+<li>Run <code>make docker-build</code> when validating image
+builds.</li>
+<li>Run <code>bash scripts/verify_local.sh</code> when a shell-based
+verification path is preferred.</li>
+<li>Run <code>make export-docs</code> after updating markdown
+documentation and when <code>.html</code> and <code>.docx</code>
+artifacts are needed.</li>
+</ol>
+<h2 id="current-design-intent">Current design intent</h2>
+<p>This repo is a lightweight demo and POC shell, not yet a full
+enterprise platform. It is designed to stay small at the app layer while
+progressively reusing richer shared capabilities from the local
+<code>AIAgents</code> portfolio for MCP, workflow packs, Oracle
+adapters, and stronger control-plane behavior.</p>
+</body>
+</html>

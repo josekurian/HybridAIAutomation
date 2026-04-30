@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Invoice Processing</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Invoice Processing</h1>
+</header>
+<h1 id="invoice-workflow-guide">Invoice Workflow Guide</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="workflow-source">Workflow source</h2>
+<ul>
+<li><code>workflows/invoice_processing.yaml</code></li>
+<li><code>backend/app/agents/invoice_agent.py</code></li>
+</ul>
+<h2 id="workflow-objective">Workflow objective</h2>
+<p>Process an invoice document, extract its operationally important
+fields, and determine whether it should stay in standard accounts
+payable processing or be escalated for higher-value approval.</p>
+<h2 id="phase-map">Phase map</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Step ID</th>
+<th>Action</th>
+<th>Runtime meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 1</td>
+<td><code>ingest</code></td>
+<td><code>receive_document</code></td>
+<td>Accept OCR text or operator-pasted invoice content</td>
+</tr>
+<tr>
+<td>Phase 2</td>
+<td><code>extract</code></td>
+<td><code>run_agent</code></td>
+<td>Use the invoice agent to extract fields and generate a summary</td>
+</tr>
+<tr>
+<td>Phase 3</td>
+<td><code>validate</code></td>
+<td><code>validate_required_fields</code></td>
+<td>Detect missing critical fields and issue operator actions</td>
+</tr>
+<tr>
+<td>Phase 4</td>
+<td><code>route</code></td>
+<td><code>route_to_queue</code></td>
+<td>Send standard invoices to AP validation</td>
+</tr>
+<tr>
+<td>Phase 5</td>
+<td><code>approve_high_value</code></td>
+<td><code>conditional_escalation</code></td>
+<td>Escalate invoices at or above the threshold</td>
+</tr>
+</tbody>
+</table>
+<h2 id="end-to-end-diagram">End-to-end diagram</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;Invoice document text&quot;] --&gt; B[&quot;Phase 1: ingest&quot;]
+    B --&gt; C[&quot;Phase 2: extract with InvoiceAgent&quot;]
+    C --&gt; D[&quot;Extract invoice number, vendor, amount, due date, PO&quot;]
+    D --&gt; E[&quot;Phase 3: validate required fields&quot;]
+    E --&gt; F{&quot;Amount &gt;= 10000?&quot;}
+    F --&gt;|&quot;No&quot;| G[&quot;Phase 4: route to finance.ap_standard&quot;]
+    F --&gt;|&quot;Yes&quot;| H[&quot;Phase 5: escalate to finance.ap_high_value&quot;]
+    G --&gt; I[&quot;Return summary, actions, confidence&quot;]
+    H --&gt; I</code></pre>
+<h2 id="detailed-phases-and-steps">Detailed phases and steps</h2>
+<h3 id="phase-1-ingest">Phase 1: Ingest</h3>
+<p>Purpose:</p>
+<ul>
+<li>receive invoice text from the frontend or direct API call</li>
+</ul>
+<p>Inputs:</p>
+<ul>
+<li>raw invoice OCR output</li>
+<li>pasted invoice text</li>
+</ul>
+<p>Outputs:</p>
+<ul>
+<li>normalized text ready for extraction</li>
+</ul>
+<p>Operational notes:</p>
+<ul>
+<li>this starter does not include OCR</li>
+<li>the current expectation is that text already exists when the request
+arrives</li>
+</ul>
+<h3 id="phase-2-extract">Phase 2: Extract</h3>
+<p>Purpose:</p>
+<ul>
+<li>turn unstructured invoice text into structured operational
+fields</li>
+</ul>
+<p>Fields extracted today:</p>
+<ul>
+<li>invoice number</li>
+<li>vendor</li>
+<li>amount due</li>
+<li>due date</li>
+<li>purchase order number</li>
+</ul>
+<p>Supporting logic:</p>
+<ul>
+<li>whitespace normalization</li>
+<li>regex extraction</li>
+<li>amount parsing to <code>Decimal</code></li>
+<li>retrieval of policy snippets when enabled</li>
+</ul>
+<p>Outputs:</p>
+<ul>
+<li>structured fields</li>
+<li>first-pass summary</li>
+<li>candidate routing target</li>
+</ul>
+<h3 id="phase-3-validate">Phase 3: Validate</h3>
+<p>Purpose:</p>
+<ul>
+<li>determine whether the document is complete enough for downstream
+handling</li>
+</ul>
+<p>Critical fields:</p>
+<ul>
+<li>invoice number</li>
+<li>amount due</li>
+<li>due date</li>
+</ul>
+<p>Validation behavior:</p>
+<ul>
+<li>if critical fields are missing, the response includes a next action
+asking for document review or OCR correction</li>
+<li>confidence decreases as missing critical fields increase</li>
+</ul>
+<p>Business value:</p>
+<ul>
+<li>prevents the workflow from silently routing low-quality document
+parses</li>
+</ul>
+<h3 id="phase-4-route-to-standard-ap">Phase 4: Route to Standard AP</h3>
+<p>Entry condition:</p>
+<ul>
+<li>amount is below <code>10000</code>, or amount could not trigger
+high-value escalation</li>
+</ul>
+<p>Route target:</p>
+<ul>
+<li><code>finance.ap_standard</code></li>
+</ul>
+<p>Next actions added:</p>
+<ul>
+<li>route to accounts payable for standard validation and posting</li>
+<li>if a PO exists, require invoice-to-PO matching</li>
+<li>if a PO is missing, request PO confirmation or non-PO
+justification</li>
+</ul>
+<h3 id="phase-5-escalate-high-value-invoice">Phase 5: Escalate
+High-Value Invoice</h3>
+<p>Entry condition:</p>
+<ul>
+<li>parsed amount is greater than or equal to <code>10000</code></li>
+</ul>
+<p>Route target:</p>
+<ul>
+<li><code>finance.ap_high_value</code></li>
+</ul>
+<p>Next actions added:</p>
+<ul>
+<li>escalate to finance approval</li>
+<li>still require PO validation behavior where applicable</li>
+</ul>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>This starter workflow now maps clearly to broader Oracle finance
+reuse assets in
+<code>AIAgents/OracleFinancialsFrontierFullImplementation</code>,
+especially:</p>
+<ul>
+<li><code>ap_invoice_intake_triage</code></li>
+<li><code>duplicate_invoice_detection</code></li>
+<li><code>invoice_to_payment_status_tracking</code></li>
+<li><code>payment_hold_resolution</code></li>
+<li><code>supplier_invoice_exception_handling</code></li>
+</ul>
+<p>That makes invoice processing the best first expansion area for new
+customer POCs because the local portfolio already contains richer
+next-wave workflows.</p>
+<h2 id="decision-table">Decision table</h2>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Missing invoice number, amount, or due date</td>
+<td>Add remediation action and lower confidence</td>
+</tr>
+<tr>
+<td>Amount <code>&lt; 10000</code></td>
+<td>Route to <code>finance.ap_standard</code></td>
+</tr>
+<tr>
+<td>Amount <code>&gt;= 10000</code></td>
+<td>Route to <code>finance.ap_high_value</code></td>
+</tr>
+<tr>
+<td>PO present</td>
+<td>Add matching step</td>
+</tr>
+<tr>
+<td>PO missing</td>
+<td>Add request for PO or non-PO confirmation</td>
+</tr>
+</tbody>
+</table>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li>no OCR ingestion pipeline yet</li>
+<li>no vendor master lookup</li>
+<li>no persistence or approval history</li>
+<li>no ERP integration for posting or matching</li>
+</ul>
+</body>
+</html>

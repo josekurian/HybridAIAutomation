@@ -1,0 +1,30 @@
+{
+  "card_id": "invoice-intake-analyst",
+  "version": "1.0.0",
+  "agent_id": "invoice-intake-analyst",
+  "name": "Invoice Intake Analyst",
+  "domain": "finance",
+  "summary": "Normalizes invoice content and extracts AP-relevant fields for downstream agents.",
+  "role": "intake_normalization",
+  "endpoint": "/api/v1/agents/run",
+  "connector_type": "internal",
+  "supported_scopes": ["agents:run", "workflows:run", "protocols:a2a:read"],
+  "accepted_context_schema": {
+    "type": "object",
+    "properties": {
+      "document_text": { "type": "string" },
+      "metadata": { "type": "object" }
+    },
+    "required": ["document_text"]
+  },
+  "produced_context_schema": {
+    "type": "object",
+    "properties": {
+      "invoice_number": { "type": "string" },
+      "vendor": { "type": "string" },
+      "amount_due": { "type": "string" },
+      "due_date": { "type": "string" }
+    }
+  },
+  "handoff_targets": ["policy-validation-agent", "duplicate-risk-agent"]
+}

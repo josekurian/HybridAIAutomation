@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Customer Poc Playbook</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Customer Poc Playbook</h1>
+</header>
+<h1 id="customer-poc-playbook">Customer POC Playbook</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Use this repository not only as an engineering starter, but as a
+repeatable delivery package for new customer POCs in finance and
+healthcare.</p>
+<h2 id="what-customers-usually-need-to-see">What customers usually need
+to see</h2>
+<p>For a pilot to convert, the customer usually needs evidence in four
+areas:</p>
+<ol type="1">
+<li>Business relevance</li>
+<li>Explainability</li>
+<li>Integration readiness</li>
+<li>Operational control</li>
+</ol>
+<p>This starter now supports all four at a baseline level.</p>
+<h2 id="poc-success-pattern">POC success pattern</h2>
+<h3 id="phase-1-discovery-and-scoping">Phase 1: Discovery and
+scoping</h3>
+<p>Capture these before building customer-specific features:</p>
+<ul>
+<li>target business process</li>
+<li>document types and sample volume</li>
+<li>source systems</li>
+<li>approval thresholds</li>
+<li>compliance constraints</li>
+<li>pilot success criteria</li>
+</ul>
+<p>Output:</p>
+<ul>
+<li>one-page pilot scope</li>
+<li>documented input samples</li>
+<li>explicit success metrics</li>
+</ul>
+<h3 id="phase-2-demo-with-believable-workflow-output">Phase 2: Demo with
+believable workflow output</h3>
+<p>Use the current repo to demonstrate:</p>
+<ul>
+<li>workflow steps</li>
+<li>extracted fields</li>
+<li>routing target</li>
+<li>decision trace</li>
+<li>mocked Oracle handoff</li>
+<li>audit event ID</li>
+</ul>
+<p>This is stronger than a generic AI chat demo because it looks like an
+operations tool, not just a model response.</p>
+<h3 id="phase-3-add-customer-specific-business-rules">Phase 3: Add
+customer-specific business rules</h3>
+<p>The fastest way to improve close probability is to encode one or two
+rules that the customer immediately recognizes as theirs.</p>
+<p>Examples:</p>
+<ul>
+<li>invoice approval thresholds by business unit</li>
+<li>required PO behavior by spend type</li>
+<li>payer-specific prior auth review rules</li>
+<li>diagnosis-to-procedure exceptions</li>
+</ul>
+<h3 id="phase-4-swap-mocks-for-guided-integrations">Phase 4: Swap mocks
+for guided integrations</h3>
+<p>Do not wait for production integration to start the pilot. Replace
+mocks in layers:</p>
+<ul>
+<li>first: mocked Oracle handoff objects</li>
+<li>second: API contract adapters</li>
+<li>third: non-production environment integration</li>
+<li>fourth: production-hardening and monitoring</li>
+</ul>
+<h3 id="phase-5-close-with-auditability-and-control">Phase 5: Close with
+auditability and control</h3>
+<p>Customers buy faster when they can answer:</p>
+<ul>
+<li>who ran the automation</li>
+<li>what decision was made</li>
+<li>why the decision was made</li>
+<li>where the case was routed</li>
+<li>what system would receive it next</li>
+</ul>
+<p>That is why audit IDs, decision traces, and integration artifacts
+matter even in an early POC.</p>
+<h2 id="recommended-pilot-package">Recommended pilot package</h2>
+<p>For each new customer, prepare:</p>
+<ul>
+<li>a customer-specific <code>.env</code> profile</li>
+<li>3 to 5 realistic sample documents</li>
+<li>one finance demo flow and one exception flow</li>
+<li>one healthcare standard flow and one escalation flow</li>
+<li>a screenshot or live walkthrough of audit events</li>
+<li>a short integration roadmap showing mock-to-live progression</li>
+</ul>
+<h2 id="technical-expansion-paths">Technical expansion paths</h2>
+<h3 id="finance--oracle-erp">Finance / Oracle ERP</h3>
+<ul>
+<li>supplier master lookup</li>
+<li>purchase order and receipt matching</li>
+<li>invoice hold reasons</li>
+<li>AP import batch creation</li>
+<li>anomaly detection over historical invoice patterns</li>
+</ul>
+<h3 id="healthcare--oracle-health">Healthcare / Oracle Health</h3>
+<ul>
+<li>eligibility and benefits lookup</li>
+<li>FHIR resource adapters</li>
+<li>authorization status tracking</li>
+<li>clinician review queues</li>
+<li>payer-specific medical necessity rules</li>
+</ul>
+<h3 id="shared-platform">Shared platform</h3>
+<ul>
+<li>authentication and RBAC</li>
+<li>case persistence</li>
+<li>document ingestion</li>
+<li>vector retrieval</li>
+<li>observability dashboards</li>
+<li>tenant isolation</li>
+</ul>
+<h2 id="delivery-checklist">Delivery checklist</h2>
+<p>Before each customer meeting, verify:</p>
+<ul>
+<li>frontend loads on <code>5401</code></li>
+<li>backend docs load on <code>5405/docs</code></li>
+<li>both workflows run successfully</li>
+<li>audit events are created</li>
+<li>decision trace is visible</li>
+<li>mocked Oracle handoff artifacts are visible</li>
+<li>one customer-specific scenario is prepared</li>
+<li>next-step architecture is documented</li>
+</ul>
+<h2 id="commercial-advice">Commercial advice</h2>
+<p>The best next deal usually comes from showing a short path from:</p>
+<ul>
+<li>mocked but believable workflow</li>
+<li>to low-risk integration</li>
+<li>to measurable business value</li>
+</ul>
+<p>Do not lead with platform abstraction. Lead with one costly workflow,
+one clear decision path, and one credible integration plan.</p>
+<h2 id="reusable-accelerators-already-available-locally">Reusable
+accelerators already available locally</h2>
+<p>The review of <code>/Users/josekurian/AIAgents</code> changes the
+practical delivery plan. You already own far more reusable capability
+than this starter alone exposes.</p>
+<h3 id="best-assets-to-reuse-immediately">Best assets to reuse
+immediately</h3>
+<ul>
+<li><code>MCPPlatform</code> for approved MCP server overlays and shared
+runtime policy</li>
+<li><code>MCPEngine</code> for audit, approvals, replay protection, and
+governance</li>
+<li><code>EnterpriseAgents</code> for broader packaged agent and
+workflow definitions</li>
+<li><code>OracleFinancialsFrontierFullImplementation</code> for
+finance-oriented agent teams, workflow specs, typed tool contracts, and
+scorecard patterns</li>
+<li>Oracle Health extension catalogs for expanding the current
+prior-auth POC into a more credible payer/provider operations
+package</li>
+</ul>
+<h3 id="customer-poc-packaging-strategy">Customer POC packaging
+strategy</h3>
+<p>For a new customer POC, build the proposal around three layers:</p>
+<ol type="1">
+<li>the current <code>HybridAIAutomation</code> UI and lightweight API
+shell</li>
+<li>imported workflow and agent patterns from the local Oracle finance
+or health catalogs</li>
+<li>shared MCP and governance services from <code>MCPPlatform</code> and
+<code>MCPEngine</code></li>
+</ol>
+<p>That gives you a faster route to:</p>
+<ul>
+<li>domain credibility</li>
+<li>stronger auditability</li>
+<li>safer tool access</li>
+<li>a better production migration story</li>
+</ul>
+<h2 id="platform-changes-that-improve-poc-sellability">Platform changes
+that improve POC sellability</h2>
+<h3 id="openai-implications-as-of-2026-04-29">OpenAI implications as of
+2026-04-29</h3>
+<ul>
+<li>Remote MCP servers and connectors are now a documented first-class
+Responses API pattern, which makes your MCP-based reuse strategy
+commercially cleaner.</li>
+<li>The April 2026 OpenAI changelog introduces GPT-5.5 and GPT-5.5 pro
+in the Responses API, with support for MCP, tool search, web search,
+hosted shell, and structured outputs.</li>
+<li>Deep research models now support web search, remote MCP servers, and
+file search over vector stores, which opens a stronger analyst-assistant
+motion for customer discovery, audit investigation, and policy
+analysis.</li>
+</ul>
+<h3 id="oracle-implications-as-of-2026-04-29">Oracle implications as of
+2026-04-29</h3>
+<ul>
+<li>Oracle expanded AI Agent Studio on March 24, 2026 with an Agentic
+Applications Builder plus workflow orchestration, contextual memory,
+content intelligence, and ROI measurement.</li>
+<li>Oracle introduced Fusion Agentic Applications for finance, supply
+chain, and HR on April 9, 2026. That matters because buyers are now
+hearing a stronger "agentic applications" message, not just isolated AI
+agents.</li>
+<li>OCI Enterprise AI reached GA on March 31, 2026 with an
+OpenAI-compatible Responses API, remote MCP calling, file search, vector
+stores, and containers, which improves the OCI-first deployment path for
+this repo.</li>
+</ul>
+<h2 id="expansion-plays-for-new-customer-projects">Expansion plays for
+new customer projects</h2>
+<h3 id="finance">Finance</h3>
+<ul>
+<li>AP invoice intake and duplicate detection</li>
+<li>payment hold resolution</li>
+<li>supplier exception handling</li>
+<li>invoice-to-payment status tracking</li>
+<li>close and controls evidence packs</li>
+</ul>
+<h3 id="healthcare">Healthcare</h3>
+<ul>
+<li>prior authorization</li>
+<li>denial recovery</li>
+<li>referral closure</li>
+<li>patient intake to encounter</li>
+<li>revenue-cycle daily close</li>
+</ul>
+<h3 id="shared-enterprise-platform">Shared enterprise platform</h3>
+<ul>
+<li>MCP-backed retrieval and action tools</li>
+<li>customer-specific approval policies</li>
+<li>trace scorecards and audit dashboards</li>
+<li>reusable agent team templates</li>
+<li>OCI vector search and enterprise knowledge retrieval</li>
+</ul>
+</body>
+</html>

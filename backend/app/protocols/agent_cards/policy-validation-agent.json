@@ -1,0 +1,29 @@
+{
+  "card_id": "policy-validation-agent",
+  "version": "1.0.0",
+  "agent_id": "policy-validation-agent",
+  "name": "Policy Validation Agent",
+  "domain": "finance",
+  "summary": "Applies AP threshold, PO, and exception-routing rules to structured invoice context.",
+  "role": "policy_validation",
+  "endpoint": "/api/v1/workflows/invoice_processing/run",
+  "connector_type": "mcp",
+  "supported_scopes": ["workflows:run", "protocols:mcp:execute", "protocols:a2a:read"],
+  "accepted_context_schema": {
+    "type": "object",
+    "properties": {
+      "invoice_number": { "type": "string" },
+      "amount_due": { "type": "string" },
+      "purchase_order_number": { "type": "string" }
+    },
+    "required": ["invoice_number", "amount_due"]
+  },
+  "produced_context_schema": {
+    "type": "object",
+    "properties": {
+      "routing_target": { "type": "string" },
+      "requires_po_match": { "type": "boolean" }
+    }
+  },
+  "handoff_targets": ["duplicate-risk-agent", "oracle-ap-handoff-agent"]
+}

@@ -3,4 +3,6 @@ httpx==0.28.1
 pydantic-settings==2.10.1
 uvicorn[standard]==0.35.0
 openai==1.99.6
+PyJWT==2.9.0
+PyYAML==6.0.2
 pytest==8.4.1

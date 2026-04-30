@@ -1,0 +1,29 @@
+{
+  "card_id": "eligibility-review-agent",
+  "version": "1.0.0",
+  "agent_id": "eligibility-review-agent",
+  "name": "Eligibility Review Agent",
+  "domain": "healthcare",
+  "summary": "Checks payer, member, and completeness readiness before utilization or medical review.",
+  "role": "eligibility_review",
+  "endpoint": "/api/v1/workflows/prior_authorization/run",
+  "connector_type": "mcp",
+  "supported_scopes": ["workflows:run", "protocols:mcp:execute", "protocols:a2a:read"],
+  "accepted_context_schema": {
+    "type": "object",
+    "properties": {
+      "patient_name": { "type": "string" },
+      "member_id": { "type": "string" },
+      "payer": { "type": "string" }
+    },
+    "required": ["member_id", "payer"]
+  },
+  "produced_context_schema": {
+    "type": "object",
+    "properties": {
+      "eligibility_reference": { "type": "string" },
+      "coverage_review_required": { "type": "boolean" }
+    }
+  },
+  "handoff_targets": ["medical-necessity-agent", "oracle-health-handoff-agent"]
+}

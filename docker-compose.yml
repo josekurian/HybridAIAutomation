@@ -1,27 +1,67 @@
 services:
-  api:
+  backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
     environment:
-      APP_ENV: local
-      API_PREFIX: /api/v1
+      ENV: ${ENV:-dev}
+      APP_ENV: ${APP_ENV:-dev}
+      API_PREFIX: ${API_PREFIX:-/api/v1}
       DEFAULT_AI_PROVIDER: ${DEFAULT_AI_PROVIDER:-local}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini}
+      OCI_CONFIG_PATH: ${OCI_CONFIG_PATH:-}
+      OCI_PROFILE: ${OCI_PROFILE:-DEFAULT}
       OCI_AI_ENDPOINT: ${OCI_AI_ENDPOINT:-}
       OCI_AI_API_KEY: ${OCI_AI_API_KEY:-}
       OCI_AI_MODEL: ${OCI_AI_MODEL:-cohere.command-r-16k}
+      ORACLE_DB_DSN: ${ORACLE_DB_DSN:-}
+      ORACLE_DB_USER: ${ORACLE_DB_USER:-}
+      ORACLE_DB_PASSWORD: ${ORACLE_DB_PASSWORD:-}
+      VECTOR_DB_URL: ${VECTOR_DB_URL:-postgresql://postgres:postgres@db:5432/vector}
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-false}
+      DEMO_ADMIN_USER: ${DEMO_ADMIN_USER:-demo-admin}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-demo-password}
+      AUDIT_LOG_PATH: ${AUDIT_LOG_PATH:-data/audit_events.jsonl}
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
-      - "8000:8000"
+      - "5405:8000"
+    volumes:
+      - ./data:/app/data
 
-  web:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5405}
     depends_on:
-      - api
+      - backend
     ports:
-      - "5173:4173"
+      - "5401:3000"
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: vector
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vector"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

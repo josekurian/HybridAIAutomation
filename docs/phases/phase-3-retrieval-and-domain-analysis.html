@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase 3 Retrieval And Domain Analysis</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase 3 Retrieval And Domain Analysis</h1>
+</header>
+<h1 id="phase-3-retrieval-and-domain-analysis">Phase 3: Retrieval and
+Domain Analysis</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Combine lightweight domain context with deterministic extraction
+logic to produce a dependable first-pass business decision before any
+external AI service is involved.</p>
+<h2 id="code-anchors">Code anchors</h2>
+<ul>
+<li><code>backend/app/rag/retrieval.py</code></li>
+<li><code>backend/app/agents/invoice_agent.py</code></li>
+<li><code>backend/app/agents/prior_auth_agent.py</code></li>
+</ul>
+<h2 id="detailed-steps">Detailed steps</h2>
+<h3 id="step-1-normalize-the-input-text">Step 1: Normalize the input
+text</h3>
+<p>Both domain agents collapse whitespace and analyze a normalized
+string. This reduces sensitivity to OCR line breaks and uneven
+spacing.</p>
+<h3 id="step-2-retrieve-domain-hints">Step 2: Retrieve domain hints</h3>
+<p><code>DomainRetriever</code> uses keyword overlap against a small
+in-memory corpus.</p>
+<p>Current behavior:</p>
+<ul>
+<li>select snippets only from the matching business domain</li>
+<li>rank them by keyword overlap</li>
+<li>return the highest scoring items</li>
+<li>fall back to default domain snippets when overlap is zero</li>
+</ul>
+<p>This is intentionally simple but useful for explaining why a route or
+escalation occurred.</p>
+<h3 id="step-3-extract-structured-fields">Step 3: Extract structured
+fields</h3>
+<p>The domain agents use explicit regex patterns to pull out known
+business data.</p>
+<p>Invoice fields:</p>
+<ul>
+<li>invoice number</li>
+<li>vendor</li>
+<li>amount due</li>
+<li>due date</li>
+<li>purchase order number</li>
+</ul>
+<p>Prior authorization fields:</p>
+<ul>
+<li>patient name</li>
+<li>member ID</li>
+<li>payer</li>
+<li>diagnosis</li>
+<li>procedure</li>
+<li>ordering provider</li>
+</ul>
+<h3 id="step-4-detect-missing-critical-data">Step 4: Detect missing
+critical data</h3>
+<p>Each agent defines a small set of fields that must exist for a
+high-confidence result. Missing values reduce confidence and trigger
+operator-facing next actions.</p>
+<p>This is important because it makes incompleteness visible rather than
+silently pretending the document was fully parsed.</p>
+<h3 id="step-5-convert-extracted-values-into-routing-decisions">Step 5:
+Convert extracted values into routing decisions</h3>
+<p>The agent logic then applies domain-specific rules:</p>
+<p>Invoice rules:</p>
+<ul>
+<li>if amount is <code>&gt;= 10000</code>, escalate to
+<code>finance.ap_high_value</code></li>
+<li>otherwise route to <code>finance.ap_standard</code></li>
+<li>if a PO is present, require matching</li>
+<li>if no PO is present, request confirmation of non-PO spend</li>
+</ul>
+<p>Prior authorization rules:</p>
+<ul>
+<li>if high-acuity keywords are present, escalate to
+<code>healthcare.medical_review</code></li>
+<li>otherwise route to <code>healthcare.utilization_review</code></li>
+<li>always confirm eligibility and diagnosis-to-procedure alignment</li>
+</ul>
+<h3 id="step-6-score-confidence">Step 6: Score confidence</h3>
+<p>Confidence starts from a business-specific base and is adjusted based
+on:</p>
+<ul>
+<li>count of missing critical fields</li>
+<li>presence of retrieval context</li>
+</ul>
+<p>This keeps confidence explainable rather than model-derived and
+opaque.</p>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>The current retrieval logic is still intentionally lightweight. The
+strongest upgrade path is to replace the in-memory snippet approach with
+OCI or OpenAI file-search-backed retrieval and Oracle AI Vector Search,
+while preserving the current explainability contract.</p>
+<h2 id="diagram">Diagram</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;Normalized document text&quot;] --&gt; B[&quot;Search in-memory domain snippets&quot;]
+    B --&gt; C[&quot;Return ranked retrieval context&quot;]
+    C --&gt; D[&quot;Run regex-based field extraction&quot;]
+    D --&gt; E[&quot;Check missing critical fields&quot;]
+    E --&gt; F[&quot;Apply domain routing rules&quot;]
+    F --&gt; G[&quot;Build summary, next actions, confidence&quot;]</code></pre>
+<h2 id="exit-criteria">Exit criteria</h2>
+<ul>
+<li>extraction works without external AI configuration</li>
+<li>routing decisions are reproducible</li>
+<li>missing data is surfaced explicitly</li>
+<li>retrieval context is attached for operator review</li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase 6 Deployment Validation And Extension</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase 6 Deployment Validation And Extension</h1>
+</header>
+<h1 id="phase-6-deployment-validation-and-extension">Phase 6:
+Deployment, Validation, and Extension</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Move the starter from source code into an executable local
+environment, verify the baseline behavior, and define the next phases
+toward production readiness.</p>
+<h2 id="code-anchors">Code anchors</h2>
+<ul>
+<li><code>docker-compose.yml</code></li>
+<li><code>backend/Dockerfile</code></li>
+<li><code>frontend/Dockerfile</code></li>
+<li><code>infrastructure/terraform/oci/main.tf</code></li>
+<li><code>infrastructure/kubernetes/deployment.yaml</code></li>
+<li><code>tests/test_api.py</code></li>
+</ul>
+<h2 id="detailed-steps">Detailed steps</h2>
+<h3 id="step-1-package-the-backend">Step 1: Package the backend</h3>
+<p>The backend Docker image:</p>
+<ul>
+<li>starts from <code>python:3.12-slim</code></li>
+<li>installs <code>backend/requirements.txt</code></li>
+<li>copies the FastAPI app</li>
+<li>launches Uvicorn on port <code>8000</code></li>
+</ul>
+<h3 id="step-2-package-the-frontend">Step 2: Package the frontend</h3>
+<p>The frontend Docker image:</p>
+<ul>
+<li>starts from <code>node:20-alpine</code></li>
+<li>installs npm dependencies</li>
+<li>builds the production bundle</li>
+<li>serves the preview app on port <code>3000</code></li>
+</ul>
+<h3 id="step-3-compose-the-local-runtime">Step 3: Compose the local
+runtime</h3>
+<p><code>docker-compose.yml</code> defines three services:</p>
+<ul>
+<li><code>backend</code></li>
+<li><code>frontend</code></li>
+<li><code>db</code></li>
+</ul>
+<p>This creates a clean separation between the frontend experience,
+backend processing path, and pilot database service while still being
+easy to start locally.</p>
+<h3 id="step-4-validate-backend-behavior">Step 4: Validate backend
+behavior</h3>
+<p><code>tests/test_api.py</code> verifies:</p>
+<ul>
+<li>health endpoint availability</li>
+<li>invoice routing</li>
+<li>prior-authorization routing</li>
+</ul>
+<p>These tests confirm the critical domain branches work before any UI
+or deployment work is considered trustworthy.</p>
+<h3 id="step-5-maintain-infrastructure-placeholders">Step 5: Maintain
+infrastructure placeholders</h3>
+<p>The infrastructure layer is intentionally a starter:</p>
+<ul>
+<li>OCI Terraform defines provider and common tags</li>
+<li>Kubernetes manifests define baseline deployments and services</li>
+</ul>
+<p>This provides a documented path forward without pretending deployment
+automation is production-complete.</p>
+<h3 id="step-6-define-the-next-implementation-phases">Step 6: Define the
+next implementation phases</h3>
+<p>Logical future phases after this starter are:</p>
+<ul>
+<li>OCR and document ingestion</li>
+<li>persistence and audit history</li>
+<li>authentication and role-based access</li>
+<li>queue-driven orchestration</li>
+<li>real vector retrieval</li>
+<li>production OCI deployment hardening</li>
+</ul>
+<h2 id="diagram">Diagram</h2>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>Deployment guidance is now better framed as a staged progression:</p>
+<ol type="1">
+<li>current local Docker demo</li>
+<li>OCI Enterprise AI or Oracle Fusion-connected pilot environment</li>
+<li>shared MCP services from <code>MCPPlatform</code></li>
+<li>hardened gateway, approvals, and durable audit from
+<code>MCPEngine</code></li>
+<li>production OCI deployment with real Oracle integrations</li>
+</ol>
+<pre class="mermaid"><code>flowchart LR
+    A[&quot;Source repository&quot;] --&gt; B[&quot;Backend Docker image&quot;]
+    A --&gt; C[&quot;Frontend Docker image&quot;]
+    A --&gt; H[&quot;Database service&quot;]
+    B --&gt; D[&quot;Docker Compose backend service&quot;]
+    C --&gt; E[&quot;Docker Compose frontend service&quot;]
+    D --&gt; F[&quot;Backend tests&quot;]
+    A --&gt; G[&quot;OCI Terraform starter&quot;]
+    A --&gt; I[&quot;Kubernetes starter&quot;]
+    F --&gt; I[&quot;Validated local baseline&quot;]</code></pre>
+<h2 id="exit-criteria">Exit criteria</h2>
+<ul>
+<li>local containers can be built and started</li>
+<li>core API tests pass</li>
+<li>deployment starter assets exist</li>
+<li>future hardening phases are documented explicitly</li>
+</ul>
+</body>
+</html>

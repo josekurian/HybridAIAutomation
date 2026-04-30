@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase 4 Ai Enrichment And Fallback</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase 4 Ai Enrichment And Fallback</h1>
+</header>
+<h1 id="phase-4-ai-enrichment-and-fallback">Phase 4: AI Enrichment and
+Fallback</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Allow the platform to enhance local results with external summaries
+while protecting the deterministic workflow from provider outages or
+missing credentials.</p>
+<h2 id="code-anchors">Code anchors</h2>
+<ul>
+<li><code>backend/app/ai/openai_client.py</code></li>
+<li><code>backend/app/ai/oci_ai_client.py</code></li>
+<li><code>backend/app/orchestration/agent_router.py</code></li>
+</ul>
+<h2 id="detailed-steps">Detailed steps</h2>
+<h3 id="step-1-finish-local-analysis-first">Step 1: Finish local
+analysis first</h3>
+<p>The router always runs the local domain agent before external AI
+calls. That means routing targets, extracted fields, and next actions
+exist even when a provider is unavailable.</p>
+<h3 id="step-2-inspect-the-requested-provider">Step 2: Inspect the
+requested provider</h3>
+<p>The incoming request can choose:</p>
+<ul>
+<li><code>local</code></li>
+<li><code>openai</code></li>
+<li><code>oci</code></li>
+</ul>
+<p><code>local</code> returns the deterministic result immediately.</p>
+<h3 id="step-3-attempt-provider-enrichment">Step 3: Attempt provider
+enrichment</h3>
+<p>OpenAI path:</p>
+<ul>
+<li>require <code>OPENAI_API_KEY</code></li>
+<li>build a summary prompt from the deterministic result</li>
+<li>call the OpenAI Responses API</li>
+<li>extract returned text</li>
+</ul>
+<p>OCI path:</p>
+<ul>
+<li>require endpoint and API key</li>
+<li>send a summary request to the configured endpoint</li>
+<li>extract returned text from a flexible JSON shape</li>
+</ul>
+<h3 id="step-4-handle-provider-unavailability-safely">Step 4: Handle
+provider unavailability safely</h3>
+<p>If a provider is not configured or fails:</p>
+<ul>
+<li>keep the original local result</li>
+<li>append a processing note</li>
+<li>mark the request as <code>completed_with_fallback</code> when
+appropriate</li>
+</ul>
+<p>This prevents external dependencies from blocking operational
+output.</p>
+<h3 id="step-5-preserve-the-same-response-schema">Step 5: Preserve the
+same response schema</h3>
+<p>Even when provider enrichment succeeds, the response shape stays the
+same. Only the summary text and provider value change.</p>
+<p>This is a deliberate compatibility rule for the frontend and future
+API clients.</p>
+<h2 id="diagram">Diagram</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;Local domain result&quot;] --&gt; B{&quot;Requested provider&quot;}
+    B --&gt;|&quot;local&quot;| C[&quot;Return local result&quot;]
+    B --&gt;|&quot;openai&quot;| D{&quot;OPENAI_API_KEY present?&quot;}
+    B --&gt;|&quot;oci&quot;| E{&quot;OCI endpoint and key present?&quot;}
+    D --&gt;|&quot;yes&quot;| F[&quot;Call OpenAI Responses API&quot;]
+    D --&gt;|&quot;no&quot;| G[&quot;Keep local result and add fallback note&quot;]
+    E --&gt;|&quot;yes&quot;| H[&quot;Call OCI AI endpoint&quot;]
+    E --&gt;|&quot;no&quot;| G
+    F --&gt; I{&quot;Summary call succeeded?&quot;}
+    H --&gt; J{&quot;Summary call succeeded?&quot;}
+    I --&gt;|&quot;yes&quot;| K[&quot;Replace summary and set provider=openai&quot;]
+    I --&gt;|&quot;no&quot;| G
+    J --&gt;|&quot;yes&quot;| L[&quot;Replace summary and set provider=oci&quot;]
+    J --&gt;|&quot;no&quot;| G</code></pre>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>This phase now has two realistic expansion paths:</p>
+<ul>
+<li>OpenAI Responses API with remote MCP servers, connectors, structured
+outputs, and background workflows</li>
+<li>OCI Enterprise AI and OCI Generative AI Enterprise AI agents for
+OCI-native deployment with OpenAI-compatible request patterns</li>
+</ul>
+<h2 id="exit-criteria">Exit criteria</h2>
+<ul>
+<li>local behavior remains primary</li>
+<li>provider enrichment is optional</li>
+<li>failures degrade gracefully</li>
+<li>operators can see fallback notes</li>
+</ul>
+</body>
+</html>

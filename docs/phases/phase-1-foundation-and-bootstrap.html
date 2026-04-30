@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase 1 Foundation And Bootstrap</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase 1 Foundation And Bootstrap</h1>
+</header>
+<h1 id="phase-1-foundation-and-bootstrap">Phase 1: Foundation and
+Bootstrap</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Establish a reproducible local project that can be started, extended,
+and documented without requiring external services on day one.</p>
+<h2 id="primary-artifacts">Primary artifacts</h2>
+<ul>
+<li><code>setup.sh</code></li>
+<li><code>.env.example</code></li>
+<li><code>docker-compose.yml</code></li>
+<li><code>backend/</code></li>
+<li><code>frontend/</code></li>
+<li><code>infrastructure/</code></li>
+<li><code>workflows/</code></li>
+<li><code>tests/</code></li>
+</ul>
+<h2 id="detailed-steps">Detailed steps</h2>
+<h3 id="step-1-create-the-directory-skeleton">Step 1: Create the
+directory skeleton</h3>
+<p>The bootstrap layer creates the major functional areas:</p>
+<ul>
+<li>backend API and orchestration code</li>
+<li>frontend operator console</li>
+<li>infrastructure assets</li>
+<li>workflow definitions</li>
+<li>tests and helper scripts</li>
+</ul>
+<p>This is handled by <code>setup.sh</code>, which is idempotent and
+safe to rerun because it creates directories and touches files without
+deleting existing content.</p>
+<h3 id="step-2-define-environment-defaults">Step 2: Define environment
+defaults</h3>
+<p><code>.env.example</code> captures the minimum runtime contract:</p>
+<ul>
+<li>local application mode</li>
+<li>API prefix</li>
+<li>default provider selection</li>
+<li>optional OpenAI settings</li>
+<li>optional OCI settings</li>
+<li>frontend API base URL</li>
+</ul>
+<p>This keeps local startup deterministic while preserving extension
+points.</p>
+<h3 id="step-3-establish-runnable-service-boundaries">Step 3: Establish
+runnable service boundaries</h3>
+<p>The repository separates concerns immediately:</p>
+<ul>
+<li><code>backend/</code> contains the FastAPI service and business
+logic</li>
+<li><code>frontend/</code> contains the React UI and build
+toolchain</li>
+<li><code>infrastructure/</code> captures future deployment targets
+rather than mixing them into app code</li>
+</ul>
+<p>This prevents early coupling between runtime code and deployment
+templates.</p>
+<h3 id="step-4-define-the-local-bring-up-path">Step 4: Define the local
+bring-up path</h3>
+<p><code>docker-compose.yml</code> provides the first operational
+baseline:</p>
+<ul>
+<li>build the backend image</li>
+<li>build the frontend image</li>
+<li>expose the backend on <code>5405</code></li>
+<li>expose the frontend on <code>5401</code></li>
+<li>include a Postgres-compatible database service for future vector and
+audit expansion</li>
+</ul>
+<p>This makes the starter usable by someone who does not want to install
+Python and Node toolchains manually.</p>
+<h3 id="step-5-add-guardrails-for-clean-repository-behavior">Step 5: Add
+guardrails for clean repository behavior</h3>
+<p><code>.gitignore</code> excludes:</p>
+<ul>
+<li><code>.env</code></li>
+<li><code>node_modules</code></li>
+<li>generated build output</li>
+<li>Python caches</li>
+<li>TypeScript build info</li>
+</ul>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>The local portfolio review changes the intended outcome of this
+phase. The bootstrap should no longer be viewed as only a blank-project
+creator. It should be viewed as the thin delivery shell that will later
+consume:</p>
+<ul>
+<li><code>MCPPlatform</code> project overlays</li>
+<li><code>MCPEngine</code> policy and audit controls</li>
+<li>Oracle Fusion and Oracle Health workflow catalogs from
+<code>AIAgents</code></li>
+</ul>
+<p>This matters because the project mixes Python and Node assets and
+would otherwise accumulate noisy local artifacts quickly.</p>
+<h2 id="deliverables-at-the-end-of-this-phase">Deliverables at the end
+of this phase</h2>
+<ul>
+<li>a consistent file structure</li>
+<li>a documented environment contract</li>
+<li>a local startup path</li>
+<li>a clean source-control baseline</li>
+</ul>
+<h2 id="diagram">Diagram</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;Start with repository root&quot;] --&gt; B[&quot;Run setup.sh or use committed scaffold&quot;]
+    B --&gt; C[&quot;Create backend, frontend, infra, workflows, tests&quot;]
+    C --&gt; D[&quot;Populate .env from .env.example&quot;]
+    D --&gt; E[&quot;Choose local dev or Docker Compose startup path&quot;]
+    E --&gt; F[&quot;Reach runnable project baseline&quot;]</code></pre>
+<h2 id="exit-criteria">Exit criteria</h2>
+<ul>
+<li>the repository contains all functional directories</li>
+<li>environment settings are documented</li>
+<li>startup options are clear</li>
+<li>source-control ignore rules are in place</li>
+</ul>
+</body>
+</html>

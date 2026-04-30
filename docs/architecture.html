@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Architecture</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Architecture</h1>
+</header>
+<h1 id="architecture-overview">Architecture Overview</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<p>This repository is organized as a layered starter system:</p>
+<ul>
+<li>presentation layer for operator interaction</li>
+<li>API layer for request validation and routing</li>
+<li>domain logic layer for deterministic extraction and workflow
+decisions</li>
+<li>optional AI enrichment layer for external summarization</li>
+<li>deployment layer for local and future cloud execution</li>
+</ul>
+<h2 id="system-view">System view</h2>
+<pre class="mermaid"><code>flowchart LR
+    A[&quot;Operator&quot;] --&gt; B[&quot;React/Vite frontend&quot;]
+    B --&gt; C[&quot;FastAPI service&quot;]
+    C --&gt; D[&quot;AgentRouter&quot;]
+    D --&gt; E[&quot;InvoiceAgent&quot;]
+    D --&gt; F[&quot;PriorAuthAgent&quot;]
+    D --&gt; G[&quot;DomainRetriever&quot;]
+    D --&gt; H[&quot;OpenAIClient (optional)&quot;]
+    D --&gt; I[&quot;OCIAIClient (optional)&quot;]
+    E --&gt; J[&quot;AgentRunResponse&quot;]
+    F --&gt; J
+    G --&gt; J
+    H --&gt; J
+    I --&gt; J
+    J --&gt; B</code></pre>
+<h2 id="runtime-request-path">Runtime request path</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Operator
+    participant UI as frontend/src/App.tsx
+    participant API as backend/app/main.py
+    participant Routes as api/routes/workflows.py
+    participant Router as orchestration/agent_router.py
+    participant Agent as agents/*
+
+    Operator-&gt;&gt;UI: Choose workflow and provider
+    UI-&gt;&gt;API: POST /api/v1/workflows/{workflow_name}/run
+    API-&gt;&gt;Routes: Route validated request
+    Routes-&gt;&gt;Router: AgentRouter.run(request)
+    Router-&gt;&gt;Agent: Domain analysis
+    Agent--&gt;&gt;Router: Summary, fields, actions, route
+    Router--&gt;&gt;Routes: WorkflowRunResponse with agent result, steps, and audit data
+    Routes--&gt;&gt;UI: JSON payload
+    UI--&gt;&gt;Operator: Structured results</code></pre>
+<h2 id="layer-by-layer-breakdown">Layer-by-layer breakdown</h2>
+<h3 id="presentation-layer">Presentation layer</h3>
+<p>Primary file:</p>
+<ul>
+<li><code>frontend/src/App.tsx</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>capture operator input</li>
+<li>submit agent requests</li>
+<li>show results in workflow-oriented cards</li>
+<li>surface errors and fallback notes</li>
+</ul>
+<h3 id="api-layer">API layer</h3>
+<p>Primary files:</p>
+<ul>
+<li><code>backend/app/main.py</code></li>
+<li><code>backend/app/api/routes/agents.py</code></li>
+<li><code>backend/app/api/routes/workflows.py</code></li>
+<li><code>backend/app/api/routes/auth.py</code></li>
+<li><code>backend/app/api/routes/audit.py</code></li>
+<li><code>backend/app/core/schemas.py</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>initialize FastAPI</li>
+<li>expose health and docs endpoints</li>
+<li>define request and response schemas</li>
+<li>provide workflow, auth, audit, and agent execution endpoints</li>
+</ul>
+<h3 id="orchestration-layer">Orchestration layer</h3>
+<p>Primary file:</p>
+<ul>
+<li><code>backend/app/orchestration/agent_router.py</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>choose the domain agent</li>
+<li>control retrieval usage</li>
+<li>invoke optional AI enrichment</li>
+<li>attach mocked Oracle integration actions</li>
+<li>emit audit events for every execution</li>
+<li>preserve a consistent response contract</li>
+</ul>
+<h3 id="domain-logic-layer">Domain logic layer</h3>
+<p>Primary files:</p>
+<ul>
+<li><code>backend/app/agents/invoice_agent.py</code></li>
+<li><code>backend/app/agents/prior_auth_agent.py</code></li>
+<li><code>backend/app/rag/retrieval.py</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>extract business fields from text</li>
+<li>compute routing targets</li>
+<li>generate next actions</li>
+<li>attach contextual policy snippets</li>
+</ul>
+<h3 id="enrichment-layer">Enrichment layer</h3>
+<p>Primary files:</p>
+<ul>
+<li><code>backend/app/ai/openai_client.py</code></li>
+<li><code>backend/app/ai/oci_ai_client.py</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>optionally replace the deterministic summary with provider-generated
+text</li>
+<li>fall back safely when credentials or endpoints are missing</li>
+</ul>
+<h3 id="deployment-layer">Deployment layer</h3>
+<p>Primary files:</p>
+<ul>
+<li><code>docker-compose.yml</code></li>
+<li><code>backend/Dockerfile</code></li>
+<li><code>frontend/Dockerfile</code></li>
+<li><code>infrastructure/terraform/oci/main.tf</code></li>
+<li><code>infrastructure/kubernetes/deployment.yaml</code></li>
+</ul>
+<p>Responsibilities:</p>
+<ul>
+<li>enable local three-service bring-up with backend, frontend, and
+database</li>
+<li>define the first OCI infrastructure contract</li>
+<li>define baseline Kubernetes deployment objects</li>
+</ul>
+<h2 id="deployment-view">Deployment view</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;Source repository&quot;] --&gt; B[&quot;Backend image build&quot;]
+    A --&gt; C[&quot;Frontend image build&quot;]
+    B --&gt; D[&quot;Docker Compose backend service :5405&quot;]
+    C --&gt; E[&quot;Docker Compose frontend service :5401&quot;]
+    A --&gt; F[&quot;OCI Terraform starter&quot;]
+    A --&gt; G[&quot;Kubernetes starter manifests&quot;]</code></pre>
+<h2 id="current-workflow-coverage">Current workflow coverage</h2>
+<ul>
+<li>invoice processing</li>
+<li>prior authorization intake</li>
+</ul>
+<p>The YAML workflow files describe the business flow, while the agent
+implementations provide the executable domain logic.</p>
+<h2 id="intended-extension-points">Intended extension points</h2>
+<ul>
+<li>replace regex extraction with OCR and structured document
+parsers</li>
+<li>replace in-memory retrieval with a vector store or enterprise
+knowledge base</li>
+<li>add persistence, audit history, and approval tracking</li>
+<li>add authentication and role-based access</li>
+<li>connect OCI AI to a real tenancy-specific contract</li>
+</ul>
+<h2 id="reuse-architecture-from-local-projects">Reuse architecture from
+local projects</h2>
+<p>The review of <code>/Users/josekurian/AIAgents</code> shows that this
+repository should not grow as an isolated starter. It should become a
+consumer of the more mature shared assets already present locally.</p>
+<pre class="mermaid"><code>flowchart LR
+    A[&quot;HybridAIAutomation&quot;] --&gt; B[&quot;MCPPlatform project overlay&quot;]
+    A --&gt; C[&quot;MCPEngine gateway and policy controls&quot;]
+    A --&gt; D[&quot;EnterpriseAgents reusable catalog&quot;]
+    A --&gt; E[&quot;Oracle Financials Frontier workflow packs&quot;]
+    A --&gt; F[&quot;Oracle Health workflow packs&quot;]
+    B --&gt; G[&quot;Shared MCP servers and aliases&quot;]
+    C --&gt; H[&quot;Approval, auth, audit, replay protection&quot;]
+    D --&gt; I[&quot;Cross-domain agent contracts&quot;]
+    E --&gt; J[&quot;Fusion finance agent teams and tool contracts&quot;]
+    F --&gt; K[&quot;Prior-auth and Oracle Health workflows&quot;]</code></pre>
+<h3 id="recommended-near-term-target-state">Recommended near-term target
+state</h3>
+<ol type="1">
+<li><code>HybridAIAutomation</code> keeps its current backend and
+frontend as the lightweight demo shell.</li>
+<li>MCP configuration is generated from <code>MCPPlatform</code>
+overlays instead of being embedded ad hoc in app code.</li>
+<li>secure tool execution and audit controls adopt
+<code>MCPEngine</code> patterns rather than growing a second parallel
+control plane.</li>
+<li>Oracle finance and healthcare workflows are imported from the richer
+local catalogs, not rebuilt from scratch.</li>
+</ol>
+<h2 id="specific-findings-from-the-local-portfolio">Specific findings
+from the local portfolio</h2>
+<h3 id="mcp-reuse">MCP reuse</h3>
+<p><code>AIAgents/AIAgentProjects/MCPPlatform</code> is already
+positioned as a single source of truth for MCP servers, aliases, ports,
+allowlists, and shared security controls. This is the right upstream
+system for this repo's eventual MCP layer.</p>
+<h3 id="control-plane-reuse">Control-plane reuse</h3>
+<p><code>AIAgents/MCPEngine</code> already contains the patterns this
+repo still lacks:</p>
+<ul>
+<li>policy backends</li>
+<li>signed envelopes</li>
+<li>replay protection</li>
+<li>durable audit pipelines</li>
+<li>immutable external log replication</li>
+</ul>
+<h3 id="oracle-fusion-finance-reuse">Oracle Fusion finance reuse</h3>
+<p><code>AIAgents/OracleFinancialsFrontierFullImplementation</code>
+already carries a much deeper Oracle finance architecture than this
+starter:</p>
+<ul>
+<li><code>50</code> workflow specs</li>
+<li><code>100</code> agent specs</li>
+<li>typed tool contracts</li>
+<li>structured Responses API patterns</li>
+<li>background job and trace scorecard behavior</li>
+</ul>
+<h3 id="oracle-health-reuse">Oracle Health reuse</h3>
+<p>The local Oracle Health extension already includes a broader
+prior-auth and revenue-cycle catalog than the current healthcare
+starter, including workflow IDs for denial recovery, prior auth
+approval, referral closure, and daily revenue-cycle close.</p>
+<h2 id="gaps-between-this-starter-and-the-local-mature-assets">Gaps
+between this starter and the local mature assets</h2>
+<ul>
+<li>no project-generated MCP overlay consumption yet</li>
+<li>no typed tool registry or tool-contract map</li>
+<li>no approval-ticket enforcement for protected actions</li>
+<li>no persistent trace scorecards or evaluation packs</li>
+<li>no reusable Oracle Fusion workflow import path</li>
+<li>no OCI-native vector search or file-search-backed retrieval
+layer</li>
+</ul>
+</body>
+</html>

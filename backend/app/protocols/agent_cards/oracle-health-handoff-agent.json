@@ -1,0 +1,29 @@
+{
+  "card_id": "oracle-health-handoff-agent",
+  "version": "1.0.0",
+  "agent_id": "oracle-health-handoff-agent",
+  "name": "Oracle Health Handoff Agent",
+  "domain": "healthcare",
+  "summary": "Prepares Oracle Health prior-authorization payloads and queue metadata.",
+  "role": "rest_handoff",
+  "endpoint": "/api/v1/studio/integrations/simulate",
+  "connector_type": "rest",
+  "supported_scopes": ["studio:integrations:run", "protocols:a2a:read"],
+  "accepted_context_schema": {
+    "type": "object",
+    "properties": {
+      "member_id": { "type": "string" },
+      "procedure": { "type": "string" },
+      "routing_target": { "type": "string" }
+    },
+    "required": ["member_id", "procedure", "routing_target"]
+  },
+  "produced_context_schema": {
+    "type": "object",
+    "properties": {
+      "oracle_health_reference": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "handoff_targets": []
+}

@@ -1,6 +1,6 @@
 import re
 
-from ..core.schemas import AgentRunResponse, RetrievedContext
+from ..core.schemas import AgentRunResponse, DecisionTraceItem, RetrievedContext
 
 
 class PriorAuthAgent:
@@ -45,6 +45,14 @@ class PriorAuthAgent:
             for name in ("patient_name", "member_id", "payer", "diagnosis", "procedure")
             if not extracted_fields.get(name)
         ]
+        decision_trace = [
+            DecisionTraceItem(
+                step="extraction",
+                detail=(
+                    "Parsed patient, member, payer, diagnosis, procedure, and ordering provider data from the request."
+                ),
+            )
+        ]
 
         high_review_keywords = ("surgery", "inpatient", "oncology", "infusion", "mri")
         requires_medical_review = any(keyword in normalized.lower() for keyword in high_review_keywords)
@@ -54,15 +62,33 @@ class PriorAuthAgent:
             next_actions.append(
                 f"Request missing utilization review inputs: {', '.join(missing_critical)}."
             )
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="completeness_review",
+                    detail=f"Missing required utilization review inputs were detected: {', '.join(missing_critical)}.",
+                )
+            )
         next_actions.append("Confirm benefit coverage and payer-specific authorization rules.")
         next_actions.append("Validate diagnosis-to-procedure alignment before submission.")
 
         if requires_medical_review:
             routing_target = "healthcare.medical_review"
             next_actions.append("Escalate to medical review due to service complexity.")
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="medical_review_trigger",
+                    detail="A high-acuity keyword matched the request, so the case was escalated to medical review.",
+                )
+            )
         else:
             routing_target = "healthcare.utilization_review"
             next_actions.append("Route to utilization review for standard prior auth handling.")
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="medical_review_trigger",
+                    detail="No high-acuity keyword matched the request, so the case remained in utilization review.",
+                )
+            )
 
         summary = (
             f"Prior authorization request for {extracted_fields['patient_name'] or 'an unidentified patient'} "
@@ -84,6 +110,7 @@ class PriorAuthAgent:
             routing_target=routing_target,
             confidence=round(confidence, 2),
             retrieved_context=context,
+            decision_trace=decision_trace,
         )
 
     @staticmethod

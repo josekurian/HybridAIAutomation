@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal, InvalidOperation
 
-from ..core.schemas import AgentRunResponse, RetrievedContext
+from ..core.schemas import AgentRunResponse, DecisionTraceItem, RetrievedContext
 
 
 class InvoiceAgent:
@@ -42,22 +42,60 @@ class InvoiceAgent:
             for name in ("invoice_number", "amount_due", "due_date")
             if not extracted_fields.get(name)
         ]
+        decision_trace = [
+            DecisionTraceItem(
+                step="extraction",
+                detail=(
+                    "Parsed invoice number, vendor, amount, due date, and purchase order from the document text."
+                ),
+            )
+        ]
 
         next_actions = []
         if missing_critical:
             next_actions.append(
                 f"Review OCR or source document for missing fields: {', '.join(missing_critical)}."
             )
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="validation",
+                    detail=f"Missing critical invoice fields were detected: {', '.join(missing_critical)}.",
+                )
+            )
         if amount_value is not None and amount_value >= Decimal("10000"):
             next_actions.append("Escalate to finance approval because the amount exceeds $10,000.")
             routing_target = "finance.ap_high_value"
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="approval_threshold",
+                    detail="Amount due met the high-value threshold, so the invoice was escalated for finance approval.",
+                )
+            )
         else:
             next_actions.append("Route to accounts payable for standard validation and posting.")
             routing_target = "finance.ap_standard"
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="approval_threshold",
+                    detail="Amount due stayed below the high-value threshold, so the invoice remained in the standard AP queue.",
+                )
+            )
         if po_number:
             next_actions.append("Match the invoice against the purchase order before posting.")
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="po_matching",
+                    detail=f"Purchase order {po_number} was found, so PO matching is required before posting.",
+                )
+            )
         else:
             next_actions.append("Request a PO reference or confirm the invoice is non-PO spend.")
+            decision_trace.append(
+                DecisionTraceItem(
+                    step="po_matching",
+                    detail="No purchase order reference was found, so the operator must confirm non-PO handling or add the PO.",
+                )
+            )
 
         summary_vendor = extracted_fields["vendor"] or "an unknown vendor"
         summary_amount = extracted_fields["amount_due"] or "an unspecified amount"
@@ -78,6 +116,7 @@ class InvoiceAgent:
             routing_target=routing_target,
             confidence=round(confidence, 2),
             retrieved_context=context,
+            decision_trace=decision_trace,
         )
 
     @staticmethod

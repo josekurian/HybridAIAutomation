@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase 2 Request Intake And Routing</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase 2 Request Intake And Routing</h1>
+</header>
+<h1 id="phase-2-request-intake-and-routing">Phase 2: Request Intake and
+Routing</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Accept document text from the operator console or API client,
+validate the request, and route it to the correct domain agent and
+summary provider path.</p>
+<h2 id="code-anchors">Code anchors</h2>
+<ul>
+<li><code>backend/app/main.py</code></li>
+<li><code>backend/app/api/routes/agents.py</code></li>
+<li><code>backend/app/core/schemas.py</code></li>
+<li><code>backend/app/orchestration/agent_router.py</code></li>
+</ul>
+<h2 id="detailed-steps">Detailed steps</h2>
+<h3 id="step-1-expose-the-api-service">Step 1: Expose the API
+service</h3>
+<p><code>backend/app/main.py</code> initializes the FastAPI application,
+configures CORS, and mounts the agent routes under the configured API
+prefix.</p>
+<p>Operational impact:</p>
+<ul>
+<li>frontend requests can be served from a different local origin</li>
+<li>the API is discoverable through <code>/docs</code></li>
+<li>the route prefix can be changed without rewriting route
+handlers</li>
+</ul>
+<h3 id="step-2-accept-a-structured-agent-request">Step 2: Accept a
+structured agent request</h3>
+<p><code>AgentRunRequest</code> defines the runtime contract:</p>
+<ul>
+<li><code>agent_type</code></li>
+<li><code>document_text</code></li>
+<li><code>provider</code></li>
+<li><code>metadata</code></li>
+<li><code>use_retrieval</code></li>
+</ul>
+<p>This ensures the router receives typed, explicit inputs rather than
+inferring behavior from loosely shaped JSON.</p>
+<h3 id="step-3-route-by-business-domain">Step 3: Route by business
+domain</h3>
+<p><code>AgentRouter.run()</code> chooses the execution path:</p>
+<ul>
+<li><code>invoice</code> requests go to <code>InvoiceAgent</code></li>
+<li><code>prior_authorization</code> requests go to
+<code>PriorAuthAgent</code></li>
+</ul>
+<p>This routing is deterministic and based on the declared request, not
+on heuristics.</p>
+<h3 id="step-4-decide-whether-retrieval-is-active">Step 4: Decide
+whether retrieval is active</h3>
+<p>If <code>use_retrieval</code> is true, the router queries
+<code>DomainRetriever</code> before agent analysis. If false, the agent
+executes with no contextual snippets.</p>
+<p>This makes retrieval optional and easy to disable during debugging or
+isolated testing.</p>
+<h3 id="step-5-preserve-a-consistent-response-shape">Step 5: Preserve a
+consistent response shape</h3>
+<p>Every request returns <code>AgentRunResponse</code>, which
+includes:</p>
+<ul>
+<li>summary</li>
+<li>extracted fields</li>
+<li>next actions</li>
+<li>routing target</li>
+<li>confidence</li>
+<li>retrieved context</li>
+<li>processing notes</li>
+</ul>
+<p>That single schema keeps the frontend simple and ensures each agent
+returns a comparable result structure.</p>
+<h2 id="diagram">Diagram</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant User as Operator
+    participant UI as React UI
+    participant API as FastAPI /api/v1/workflows/{workflow_name}/run
+    participant Router as AgentRouter
+    participant RAG as DomainRetriever
+    participant Agent as Domain Agent
+
+    User-&gt;&gt;UI: Select workflow, provider, document text
+    UI-&gt;&gt;API: POST AgentRunRequest
+    API-&gt;&gt;Router: Validate and route request
+    Router-&gt;&gt;RAG: Optional search(agent_type, document_text)
+    RAG--&gt;&gt;Router: Context snippets
+    Router-&gt;&gt;Agent: analyze(document_text, context)
+    Agent--&gt;&gt;Router: Deterministic result
+    Router--&gt;&gt;API: AgentRunResponse
+    API--&gt;&gt;UI: JSON response
+    UI--&gt;&gt;User: Render summary, routing, and actions</code></pre>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>This phase now has a clearer future target: request routing should
+eventually support both local workflow names and imported catalog-backed
+workflow IDs from the broader <code>AIAgents</code> portfolio,
+especially Oracle finance and Oracle Health teams already modeled
+elsewhere.</p>
+<h2 id="exit-criteria">Exit criteria</h2>
+<ul>
+<li>requests are validated at the API boundary</li>
+<li>routing is explicit and deterministic</li>
+<li>retrieval can be enabled or disabled</li>
+<li>the response contract is stable across agent types</li>
+</ul>
+</body>
+</html>

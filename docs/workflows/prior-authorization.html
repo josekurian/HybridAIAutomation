@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Prior Authorization</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Prior Authorization</h1>
+</header>
+<h1 id="prior-authorization-workflow-guide">Prior Authorization Workflow
+Guide</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="workflow-source">Workflow source</h2>
+<ul>
+<li><code>workflows/prior_authorization.yaml</code></li>
+<li><code>backend/app/agents/prior_auth_agent.py</code></li>
+</ul>
+<h2 id="workflow-objective">Workflow objective</h2>
+<p>Process a prior-authorization request, extract member and clinical
+details, and determine whether the case should remain in standard
+utilization review or be escalated to medical review.</p>
+<h2 id="phase-map">Phase map</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Step ID</th>
+<th>Action</th>
+<th>Runtime meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 1</td>
+<td><code>intake</code></td>
+<td><code>receive_request</code></td>
+<td>Accept request text from the UI or API</td>
+</tr>
+<tr>
+<td>Phase 2</td>
+<td><code>extract</code></td>
+<td><code>run_agent</code></td>
+<td>Use the prior-auth agent to parse the request</td>
+</tr>
+<tr>
+<td>Phase 3</td>
+<td><code>eligibility</code></td>
+<td><code>verify_member_eligibility</code></td>
+<td>Confirm the presence of key member and payer data</td>
+</tr>
+<tr>
+<td>Phase 4</td>
+<td><code>medical_review</code></td>
+<td><code>conditional_escalation</code></td>
+<td>Escalate higher-acuity services</td>
+</tr>
+<tr>
+<td>Phase 5</td>
+<td><code>utilization_review</code></td>
+<td><code>route_to_queue</code></td>
+<td>Route standard cases for utilization review</td>
+</tr>
+</tbody>
+</table>
+<h2 id="end-to-end-diagram">End-to-end diagram</h2>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;Prior authorization request text&quot;] --&gt; B[&quot;Phase 1: intake&quot;]
+    B --&gt; C[&quot;Phase 2: extract with PriorAuthAgent&quot;]
+    C --&gt; D[&quot;Extract patient, member, payer, diagnosis, procedure, provider&quot;]
+    D --&gt; E[&quot;Phase 3: eligibility and completeness review&quot;]
+    E --&gt; F{&quot;High-acuity keywords present?&quot;}
+    F --&gt;|&quot;Yes&quot;| G[&quot;Phase 4: escalate to healthcare.medical_review&quot;]
+    F --&gt;|&quot;No&quot;| H[&quot;Phase 5: route to healthcare.utilization_review&quot;]
+    G --&gt; I[&quot;Return summary, actions, confidence&quot;]
+    H --&gt; I</code></pre>
+<h2 id="detailed-phases-and-steps">Detailed phases and steps</h2>
+<h3 id="phase-1-intake">Phase 1: Intake</h3>
+<p>Purpose:</p>
+<ul>
+<li>receive the authorization request text in a format ready for
+parsing</li>
+</ul>
+<p>Inputs:</p>
+<ul>
+<li>copied request notes</li>
+<li>structured text converted from forms</li>
+<li>text produced by upstream OCR or transcription systems</li>
+</ul>
+<p>Outputs:</p>
+<ul>
+<li>normalized request text</li>
+</ul>
+<p>Operational notes:</p>
+<ul>
+<li>this starter assumes text is already available</li>
+<li>no payer portal or EHR integration is implemented yet</li>
+</ul>
+<h3 id="phase-2-extract">Phase 2: Extract</h3>
+<p>Purpose:</p>
+<ul>
+<li>identify the patient, coverage, and clinical fields needed for
+utilization review</li>
+</ul>
+<p>Fields extracted today:</p>
+<ul>
+<li>patient name</li>
+<li>member ID</li>
+<li>payer</li>
+<li>diagnosis</li>
+<li>procedure</li>
+<li>ordering provider</li>
+</ul>
+<p>Supporting logic:</p>
+<ul>
+<li>whitespace normalization</li>
+<li>regex extraction</li>
+<li>retrieval of payer-rule snippets when enabled</li>
+</ul>
+<p>Outputs:</p>
+<ul>
+<li>structured request details</li>
+<li>deterministic summary</li>
+<li>preliminary routing target</li>
+</ul>
+<h3 id="phase-3-eligibility-and-completeness-review">Phase 3:
+Eligibility and Completeness Review</h3>
+<p>Purpose:</p>
+<ul>
+<li>make incompleteness visible before case routing</li>
+</ul>
+<p>Critical fields:</p>
+<ul>
+<li>patient name</li>
+<li>member ID</li>
+<li>payer</li>
+<li>diagnosis</li>
+<li>procedure</li>
+</ul>
+<p>Validation behavior:</p>
+<ul>
+<li>missing critical fields create explicit next actions</li>
+<li>standard next actions always include benefit coverage confirmation
+and diagnosis-to-procedure validation</li>
+</ul>
+<p>Business value:</p>
+<ul>
+<li>prevents incomplete authorizations from appearing ready for review
+when they are not</li>
+</ul>
+<h3 id="phase-4-escalate-to-medical-review">Phase 4: Escalate to Medical
+Review</h3>
+<p>Entry condition:</p>
+<ul>
+<li>request text contains a high-acuity keyword such as:
+<ul>
+<li>surgery</li>
+<li>inpatient</li>
+<li>oncology</li>
+<li>infusion</li>
+<li>mri</li>
+</ul></li>
+</ul>
+<p>Route target:</p>
+<ul>
+<li><code>healthcare.medical_review</code></li>
+</ul>
+<p>Next actions added:</p>
+<ul>
+<li>escalate to medical review due to service complexity</li>
+</ul>
+<h3 id="phase-5-route-to-utilization-review">Phase 5: Route to
+Utilization Review</h3>
+<p>Entry condition:</p>
+<ul>
+<li>no high-acuity keyword is detected</li>
+</ul>
+<p>Route target:</p>
+<ul>
+<li><code>healthcare.utilization_review</code></li>
+</ul>
+<p>Next actions added:</p>
+<ul>
+<li>confirm benefit coverage and payer-specific rules</li>
+<li>validate diagnosis-to-procedure alignment</li>
+<li>route to standard utilization review</li>
+</ul>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>The prior-authorization starter flow should evolve by reusing the
+broader Oracle Health assets already present under
+<code>AIAgents</code>, especially:</p>
+<ul>
+<li><code>oracle-health-prior-auth-approval</code></li>
+<li><code>oracle-health-denial-recovery</code></li>
+<li><code>oracle-health-referral-closure</code></li>
+<li><code>oracle-health-revenue-cycle-daily-close</code></li>
+</ul>
+<p>This gives a credible path from a single prior-auth demo toward a
+wider Oracle Health revenue-cycle and utilization-management POC
+package.</p>
+<h2 id="decision-table">Decision table</h2>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Missing core member or clinical fields</td>
+<td>Add remediation action and lower confidence</td>
+</tr>
+<tr>
+<td>High-acuity keyword present</td>
+<td>Route to <code>healthcare.medical_review</code></td>
+</tr>
+<tr>
+<td>No high-acuity keyword present</td>
+<td>Route to <code>healthcare.utilization_review</code></td>
+</tr>
+<tr>
+<td>Retrieval enabled</td>
+<td>Attach payer-rule context snippets</td>
+</tr>
+</tbody>
+</table>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li>no eligibility API integration</li>
+<li>no payer-specific rule engine</li>
+<li>no authorization status persistence</li>
+<li>no clinician review work queue yet</li>
+</ul>
+</body>
+</html>

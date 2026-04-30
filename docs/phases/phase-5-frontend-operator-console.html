@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Phase 5 Frontend Operator Console</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../markdown-export.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Phase 5 Frontend Operator Console</h1>
+</header>
+<h1 id="phase-5-frontend-operator-console">Phase 5: Frontend Operator
+Console</h1>
+<p>Version: <code>0.4.0</code> Last updated: <code>2026-04-29</code></p>
+<h2 id="objective">Objective</h2>
+<p>Give an operator a single-screen console for choosing a workflow,
+submitting a document sample, and reviewing the system’s structured
+outcome.</p>
+<h2 id="code-anchors">Code anchors</h2>
+<ul>
+<li><code>frontend/src/App.tsx</code></li>
+<li><code>frontend/src/styles.css</code></li>
+</ul>
+<h2 id="detailed-steps">Detailed steps</h2>
+<h3 id="step-1-preload-usable-sample-documents">Step 1: Preload usable
+sample documents</h3>
+<p>The UI ships with sample invoice and prior-authorization text. This
+matters because a new user can validate the end-to-end flow immediately
+without hunting for input data.</p>
+<h3 id="step-2-collect-workflow-intent">Step 2: Collect workflow
+intent</h3>
+<p>The operator chooses:</p>
+<ul>
+<li>agent type</li>
+<li>provider type</li>
+<li>document text</li>
+</ul>
+<p>These map directly to the backend request schema.</p>
+<h3 id="step-3-submit-the-request">Step 3: Submit the request</h3>
+<p>The form sends a <code>POST</code> request to:</p>
+<ul>
+<li><code>VITE_API_BASE_URL + /api/v1/workflows/{workflow_name}/run</code></li>
+</ul>
+<p>The request body contains:</p>
+<ul>
+<li><code>provider</code></li>
+<li><code>document_text</code></li>
+<li><code>use_retrieval</code></li>
+</ul>
+<p>The selected workflow maps to the appropriate domain agent on the
+backend.</p>
+<h3 id="step-4-manage-asynchronous-ui-state">Step 4: Manage asynchronous
+UI state</h3>
+<p>The UI uses:</p>
+<ul>
+<li><code>useState</code> for local state</li>
+<li><code>useTransition</code> for non-blocking result updates</li>
+<li><code>useDeferredValue</code> for lightweight live document-length
+feedback</li>
+</ul>
+<p>This keeps the UI responsive even when requests take longer than
+local demos.</p>
+<h3 id="step-5-render-operational-outputs">Step 5: Render operational
+outputs</h3>
+<p>The results panel breaks the response into operator-friendly
+cards:</p>
+<ul>
+<li>summary</li>
+<li>extracted fields</li>
+<li>next actions</li>
+<li>retrieved context</li>
+<li>processing notes</li>
+</ul>
+<p>This is important because raw JSON is not a usable operational
+view.</p>
+<h3 id="step-6-surface-request-failures-explicitly">Step 6: Surface
+request failures explicitly</h3>
+<p>If the request fails, the UI clears stale results and shows an error
+box. This prevents the user from mistaking the last successful response
+for a fresh one.</p>
+<h2 id="diagram">Diagram</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Operator
+    participant UI as React Console
+    participant API as FastAPI
+
+    Operator-&gt;&gt;UI: Pick workflow and provider
+    Operator-&gt;&gt;UI: Paste or edit document text
+    UI-&gt;&gt;API: POST /api/v1/workflows/{workflow_name}/run
+    API--&gt;&gt;UI: WorkflowRunResponse or error
+    UI--&gt;&gt;Operator: Show steps, summary, trace, audit ID, and notes</code></pre>
+<h2 id="version-040-update">Version 0.4.0 update</h2>
+<p>The frontend should remain the fast demo layer, but the next
+customer-facing improvement is to expose imported workflow packs and
+team labels from the local Oracle finance and healthcare catalogs rather
+than only the two starter flows.</p>
+<h2 id="exit-criteria">Exit criteria</h2>
+<ul>
+<li>an operator can exercise both workflows from one page</li>
+<li>provider selection is explicit</li>
+<li>request status is visible</li>
+<li>structured outputs are readable without inspecting raw JSON</li>
+</ul>
+</body>
+</html>
