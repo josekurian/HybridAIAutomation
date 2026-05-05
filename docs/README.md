@@ -14,15 +14,16 @@ This directory documents the current starter implementation in two layers:
 
 1. [Architecture Overview](./architecture.md)
 2. [Repository Structure Guide](./repository-structure.md)
-3. [Phase 1: Foundation and Bootstrap](./phases/phase-1-foundation-and-bootstrap.md)
-4. [Phase 2: Request Intake and Routing](./phases/phase-2-request-intake-and-routing.md)
-5. [Phase 3: Retrieval and Domain Analysis](./phases/phase-3-retrieval-and-domain-analysis.md)
-6. [Phase 4: AI Enrichment and Fallback](./phases/phase-4-ai-enrichment-and-fallback.md)
-7. [Phase 5: Frontend Operator Console](./phases/phase-5-frontend-operator-console.md)
-8. [Phase 6: Deployment, Validation, and Extension](./phases/phase-6-deployment-validation-and-extension.md)
-9. [Invoice Workflow Guide](./workflows/invoice-processing.md)
-10. [Prior Authorization Workflow Guide](./workflows/prior-authorization.md)
-11. [Customer POC Playbook](./customer-poc-playbook.md)
+3. [Step-by-Step Testing Instructions](./step-by-step-testing-instructions.md)
+4. [Phase 1: Foundation and Bootstrap](./phases/phase-1-foundation-and-bootstrap.md)
+5. [Phase 2: Request Intake and Routing](./phases/phase-2-request-intake-and-routing.md)
+6. [Phase 3: Retrieval and Domain Analysis](./phases/phase-3-retrieval-and-domain-analysis.md)
+7. [Phase 4: AI Enrichment and Fallback](./phases/phase-4-ai-enrichment-and-fallback.md)
+8. [Phase 5: Frontend Operator Console](./phases/phase-5-frontend-operator-console.md)
+9. [Phase 6: Deployment, Validation, and Extension](./phases/phase-6-deployment-validation-and-extension.md)
+10. [Invoice Workflow Guide](./workflows/invoice-processing.md)
+11. [Prior Authorization Workflow Guide](./workflows/prior-authorization.md)
+12. [Customer POC Playbook](./customer-poc-playbook.md)
 
 ## Documentation map
 
@@ -30,6 +31,7 @@ This directory documents the current starter implementation in two layers:
 | --- | --- |
 | `architecture.md` | High-level component map, runtime path, and deployment view |
 | `repository-structure.md` | Detailed directory-by-directory guide for backend, frontend, infrastructure, and CI |
+| `step-by-step-testing-instructions.md` | Exact API, workflow, studio, protocol, and UI test steps with expected responses |
 | `phases/` | Project lifecycle and request-processing phases |
 | `workflows/` | Step-by-step business workflow execution notes |
 | `customer-poc-playbook.md` | Delivery, demo, and expansion guidance for new customer pilots |

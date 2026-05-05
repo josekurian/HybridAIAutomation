@@ -72,6 +72,7 @@ npm run dev
 - [Documentation Index](./docs/README.md)
 - [Architecture Overview](./docs/architecture.md)
 - [Repository Structure Guide](./docs/repository-structure.md)
+- [Step-by-Step Testing Instructions](./docs/step-by-step-testing-instructions.md)
 - [Invoice Workflow Guide](./docs/workflows/invoice-processing.md)
 - [Prior Authorization Workflow Guide](./docs/workflows/prior-authorization.md)
 - [Customer POC Playbook](./docs/customer-poc-playbook.md)

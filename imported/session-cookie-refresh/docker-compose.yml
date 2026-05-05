@@ -1,0 +1,56 @@
+services:
+  private-host:
+    image: python:3.12-slim
+    working_dir: /app
+    command: python services/private_host.py
+    volumes:
+      - .:/app
+    environment:
+      PRIVATE_HOST_BIND: 0.0.0.0
+      PRIVATE_HOST_PORT: ${PRIVATE_HOST_PORT:-9100}
+      BACKEND_BASIC_USER: ${BACKEND_BASIC_USER:-af_login}
+      BACKEND_BASIC_PASSWORD: ${BACKEND_BASIC_PASSWORD:-change-me}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-AHFFI_SESSION}
+      AGENT_NAME: ${AGENT_NAME:-OCI Agent Factory}
+      BACKEND_SSL_SKIP_VERIFY: ${BACKEND_SSL_SKIP_VERIFY:-true}
+    ports:
+      - "${PRIVATE_HOST_PORT:-9100}:${PRIVATE_HOST_PORT:-9100}"
+
+  login-gateway:
+    image: python:3.12-slim
+    working_dir: /app
+    command: python services/login_gateway.py
+    volumes:
+      - .:/app
+    depends_on:
+      - private-host
+    environment:
+      LOGIN_GATEWAY_BIND: 0.0.0.0
+      LOGIN_GATEWAY_PORT: ${LOGIN_GATEWAY_PORT:-8000}
+      PRIVATE_LOGIN_URL: ${PRIVATE_LOGIN_URL:-http://private-host:9100/loginValidation}
+      BACKEND_BASIC_USER: ${BACKEND_BASIC_USER:-af_login}
+      BACKEND_BASIC_PASSWORD: ${BACKEND_BASIC_PASSWORD:-change-me}
+      BACKEND_SSL_SKIP_VERIFY: ${BACKEND_SSL_SKIP_VERIFY:-true}
+      HTTP_TIMEOUT_SECONDS: ${HTTP_TIMEOUT_SECONDS:-10}
+    ports:
+      - "${LOGIN_GATEWAY_PORT:-8000}:${LOGIN_GATEWAY_PORT:-8000}"
+
+  agent-gateway:
+    image: python:3.12-slim
+    working_dir: /app
+    command: python services/agent_gateway.py
+    volumes:
+      - .:/app
+    depends_on:
+      - private-host
+      - login-gateway
+    environment:
+      AGENT_GATEWAY_BIND: 0.0.0.0
+      AGENT_GATEWAY_PORT: ${AGENT_GATEWAY_PORT:-8100}
+      LOGIN_GATEWAY_URL: ${LOGIN_GATEWAY_URL:-http://login-gateway:8000/link/loginValidation}
+      PRIVATE_AGENT_URL: ${PRIVATE_AGENT_URL:-http://private-host:9100/agent/factory}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-AHFFI_SESSION}
+      BACKEND_SSL_SKIP_VERIFY: ${BACKEND_SSL_SKIP_VERIFY:-true}
+      HTTP_TIMEOUT_SECONDS: ${HTTP_TIMEOUT_SECONDS:-10}
+    ports:
+      - "${AGENT_GATEWAY_PORT:-8100}:${AGENT_GATEWAY_PORT:-8100}"
